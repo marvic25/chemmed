@@ -1,6 +1,11 @@
 import os
+import webbrowser
 
-with open('/tmp/chemapp/node_modules/smiles-drawer/dist/smiles-drawer.min.js', 'r') as f:
+smiles_drawer_path = os.path.join(
+  os.path.dirname(os.path.abspath(__file__)),
+  'node_modules', 'smiles-drawer', 'dist', 'smiles-drawer.min.js'
+)
+with open(smiles_drawer_path, 'r') as f:
     sd_js = f.read()
 
 html = r'''<!doctype html>
@@ -73,13 +78,15 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
 .btn.d:hover{background:var(--er-bg);border-color:var(--er);color:var(--er)}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 /* Tooltip */
-.btn[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1c2e;color:#e2e6f8;font-size:.6rem;white-space:nowrap;padding:4px 8px;border-radius:4px;pointer-events:none;z-index:100;font-family:'Inter',sans-serif;font-weight:400}
+.btn[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1c2e;color:#e2e6f8;font-size:.6rem;line-height:1.35;text-align:center;white-space:normal;width:max-content;max-width:180px;padding:6px 8px;border-radius:5px;box-shadow:0 4px 12px rgba(0,0,0,.22);pointer-events:none;z-index:100;font-family:'Inter',sans-serif;font-weight:400}
 .btn[data-tip]:hover::before{content:'';position:absolute;bottom:calc(100% + 1px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1a1c2e;pointer-events:none;z-index:100}
 .asel{height:26px;padding:0 5px;border:1px solid var(--bd);border-radius:5px;background:var(--sf);color:var(--tx);font-size:.68rem;cursor:pointer;flex-shrink:0}
 /* Element palette */
 .elpal{display:flex;gap:2px;flex-shrink:0}
 .elb{width:26px;height:26px;border:1px solid var(--bd);border-radius:5px;background:var(--sf);color:var(--tx);font-size:.7rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:'Space Mono',monospace}
 .elb:hover{background:var(--ac-d);border-color:var(--ac);color:var(--ac)}
+.elb[data-tip]{position:relative}
+.elb[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1c2e;color:#e2e6f8;font-size:.6rem;line-height:1.35;text-align:center;white-space:normal;width:max-content;max-width:150px;padding:6px 8px;border-radius:5px;box-shadow:0 4px 12px rgba(0,0,0,.22);pointer-events:none;z-index:100;font-family:'Inter',sans-serif;font-weight:400}
 .elb.act{background:var(--ac);color:#fff;border-color:var(--ac)}
 .elb[data-el="N"].act{background:#3b82f6;border-color:#3b82f6}
 .elb[data-el="O"].act{background:#dc2626;border-color:#dc2626}
@@ -141,6 +148,9 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
 .vrd.ok{background:var(--ok-bg);color:var(--ok);border:1px solid var(--ok-br)}
 .vrd.fail{background:var(--er-bg);color:var(--er);border:1px solid var(--er-br)}
 .note{font-size:.68rem;color:var(--mu);line-height:1.55;padding:8px 12px;background:var(--sf2);border-radius:8px;border-left:3px solid var(--ac)}
+.term{position:relative;border-bottom:1px dotted currentColor;cursor:help}
+.term::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);width:220px;padding:7px 9px;border-radius:5px;background:#1a1c2e;color:#e2e6f8;font-size:.62rem;font-weight:400;line-height:1.4;text-align:center;white-space:normal;box-shadow:0 4px 14px rgba(0,0,0,.24);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .15s;z-index:120}
+.term:hover::after{opacity:1;visibility:visible}
 .note.pc-note{border-left-color:var(--pc)}
 /* pKa */
 .pka-list{display:flex;flex-direction:column;gap:6px}
@@ -193,7 +203,7 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
     <span style="font-size:1.4rem">⚗️</span>
     <div>
       <div class="hl">Chem<span>Med</span></div>
-      <div class="hs">Editor Molecular · Química Médica</div>
+      <div class="hs">Editor Molecular · Química Medicinal</div>
     </div>
     <div class="hpills">
       <span class="hpill">Lipinski Ro5</span>
@@ -210,23 +220,24 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
     <div class="pnl">
       <div class="tb">
         <span class="tbl">Modo</span>
-        <button class="btn act" id="t-draw" onclick="setTool('draw')" data-tip="Desenhar (D)">✏ Desenhar</button>
-        <button class="btn" id="t-sel" onclick="setTool('sel')" data-tip="Mover átomo (M)">↖ Mover</button>
-        <button class="btn" id="t-era" onclick="setTool('era')" data-tip="Apagar (Del)">⌫ Apagar</button>
+        <button class="btn act" id="t-draw" onclick="setTool('draw')" data-tip="Desenhar átomos e ligações (D)">✏ Desenhar</button>
+        <button class="btn" id="t-sel" onclick="setTool('sel')" data-tip="Mover átomos no canvas (M)">↖ Mover</button>
+        <button class="btn" id="t-era" onclick="setTool('era')" data-tip="Apagar átomos ou ligações (Del)">⌫ Apagar</button>
         <div class="tbs"></div>
-        <button class="btn" id="undo-btn" onclick="undo()" data-tip="Desfazer (Ctrl+Z)" disabled>↩</button>
-        <button class="btn" id="redo-btn" onclick="redo()" data-tip="Refazer (Ctrl+Y)" disabled>↪</button>
-        <button class="btn" onclick="centerMol()" data-tip="Centralizar molécula">⊕</button>
+        <button class="btn" id="undo-btn" onclick="undo()" data-tip="Desfazer última alteração (Ctrl+Z)" disabled>↩</button>
+        <button class="btn" id="redo-btn" onclick="redo()" data-tip="Refazer alteração (Ctrl+Y)" disabled>↪</button>
+        <button class="btn" onclick="centerMol()" data-tip="Centralizar a molécula no canvas">⊕</button>
+        <button class="btn" onclick="editor.correctLinearity()" data-tip="Corrigir linearidade e geometria 2D">↔</button>
         <div class="tbs"></div>
         <span class="tbl">Ligação</span>
-        <button class="btn act" id="b1" onclick="setBo(1)" data-tip="Simples (1)">─</button>
-        <button class="btn" id="b2" onclick="setBo(2)" data-tip="Dupla (2)">═</button>
-        <button class="btn" id="b3" onclick="setBo(3)" data-tip="Tripla (3)">≡</button>
+        <button class="btn act" id="b1" onclick="setBo(1)" data-tip="Selecionar ligação simples">─</button>
+        <button class="btn" id="b2" onclick="setBo(2)" data-tip="Selecionar ligação dupla">═</button>
+        <button class="btn" id="b3" onclick="setBo(3)" data-tip="Selecionar ligação tripla">≡</button>
         <div class="tbs"></div>
         <span class="tbl">Anéis</span>
-        <button class="btn ring-btn" onclick="startRing(6,true)" data-tip="Benzeno aromático">⬡</button>
-        <button class="btn ring-btn" onclick="startRing(6,false)" data-tip="Anel de 6">○6</button>
-        <button class="btn ring-btn" onclick="startRing(5,false)" data-tip="Anel de 5">○5</button>
+        <button class="btn ring-btn" onclick="startRing(6,true)" data-tip="Inserir anel benzênico aromático">⬡</button>
+        <button class="btn ring-btn" onclick="startRing(6,false)" data-tip="Inserir anel alifático de 6 átomos">○6</button>
+        <button class="btn ring-btn" onclick="startRing(5,false)" data-tip="Inserir anel alifático de 5 átomos">○5</button>
         <div class="tbs"></div>
         <button class="btn d" onclick="clearAll()" data-tip="Limpar tudo">✕</button>
       </div>
@@ -234,15 +245,15 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
       <div class="tb" style="border-bottom:none;border-top:1px solid var(--bd);padding:4px 7px;gap:3px">
         <span class="tbl">Átomo</span>
         <div class="elpal" id="elpal">
-          <button class="elb act" data-el="C" onclick="setEl('C')" title="Carbono (C)">C</button>
-          <button class="elb" data-el="N" onclick="setEl('N')" title="Nitrogênio (N)">N</button>
-          <button class="elb" data-el="O" onclick="setEl('O')" title="Oxigênio (O)">O</button>
-          <button class="elb" data-el="S" onclick="setEl('S')" title="Enxofre (S)">S</button>
-          <button class="elb" data-el="P" onclick="setEl('P')" title="Fósforo (P)">P</button>
-          <button class="elb" data-el="F" onclick="setEl('F')" title="Flúor (F)">F</button>
-          <button class="elb" data-el="Cl" onclick="setEl('Cl')" title="Cloro (L)">Cl</button>
-          <button class="elb" data-el="Br" onclick="setEl('Br')" title="Bromo (B)">Br</button>
-          <button class="elb" data-el="I" onclick="setEl('I')" title="Iodo (I)">I</button>
+          <button class="elb act" data-el="C" onclick="setEl('C')" title="Carbono (C)" data-tip="Adicionar ou editar como carbono">C</button>
+          <button class="elb" data-el="N" onclick="setEl('N')" title="Nitrogênio (N)" data-tip="Adicionar ou editar como nitrogênio">N</button>
+          <button class="elb" data-el="O" onclick="setEl('O')" title="Oxigênio (O)" data-tip="Adicionar ou editar como oxigênio">O</button>
+          <button class="elb" data-el="S" onclick="setEl('S')" title="Enxofre (S)" data-tip="Adicionar ou editar como enxofre">S</button>
+          <button class="elb" data-el="P" onclick="setEl('P')" title="Fósforo (P)" data-tip="Adicionar ou editar como fósforo">P</button>
+          <button class="elb" data-el="F" onclick="setEl('F')" title="Flúor (F)" data-tip="Adicionar ou editar como flúor">F</button>
+          <button class="elb" data-el="Cl" onclick="setEl('Cl')" title="Cloro (Cl)" data-tip="Adicionar ou editar como cloro">Cl</button>
+          <button class="elb" data-el="Br" onclick="setEl('Br')" title="Bromo (Br)" data-tip="Adicionar ou editar como bromo">Br</button>
+          <button class="elb" data-el="I" onclick="setEl('I')" title="Iodo (I)" data-tip="Adicionar ou editar como iodo">I</button>
         </div>
         <div class="tbs"></div>
         <span style="font-size:.6rem;color:var(--mu);white-space:nowrap">Clique duplo no átomo para editar</span>
@@ -255,7 +266,7 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
       </div>
       <div class="sb">
         <span class="sl">SMILES</span>
-        <input class="si" id="si" type="text" placeholder="ex: c1ccccc1 — Cole ou escreva e pressione Enter"
+        <input class="si" id="si" type="text" value="CC(=O)Oc1ccccc1C(=O)O" placeholder="SMILES ou nome IUPAC — ex: aspirin"
                onkeydown="if(event.key==='Enter')analyze()">
         <button class="ab" id="analyze-btn" onclick="analyze()">▶ Analisar</button>
       </div>
@@ -328,7 +339,7 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
   <footer class="ftr">
     <span>⚗️ ChemMed · Desenvolvido por <strong>Msc. Marcos Gregório</strong></span>
     <span>·</span>
-    <span>UFPE — Química Médica</span>
+    <span>UFPE — Química Medicinal</span>
     <span>·</span>
     <span>Dados: <a href="https://pubchem.ncbi.nlm.nih.gov" target="_blank">PubChem NIH/NLM</a></span>
   </footer>
@@ -498,7 +509,7 @@ class MolEditor{
     if(ai>=0)this._delA(ai);else{const bi=this._bondNear(x,y);if(bi>=0)this._delB(bi);}
     this._upd();this.draw();
   }
-  _addA(x,y,el){const id=this.nA++;this.atoms.push({id,x,y,el});this.adj[id]=[];return id;}
+  _addA(x,y,el,aro=false){const id=this.nA++;this.atoms.push({id,x,y,el,aro});this.adj[id]=[];return id;}
   _addB(f,t,order){
     const id=this.nB++;this.bonds.push({id,from:f,to:t,order});
     this.adj[f]=this.adj[f]||[];this.adj[t]=this.adj[t]||[];
@@ -520,7 +531,7 @@ class MolEditor{
     const n=this.ringN,r=50;
     const off=-Math.PI/2+(n%2===0?Math.PI/n:0);
     const ids=[];
-    for(let i=0;i<n;i++)ids.push(this._addA(cx+r*Math.cos(off+2*Math.PI*i/n),cy+r*Math.sin(off+2*Math.PI*i/n),this.el));
+    for(let i=0;i<n;i++)ids.push(this._addA(cx+r*Math.cos(off+2*Math.PI*i/n),cy+r*Math.sin(off+2*Math.PI*i/n),this.el,this.ringAro));
     for(let i=0;i<n;i++)this._addB(ids[i],ids[(i+1)%n],this.ringAro&&i%2===0?2:1);
     this.ringMode=false;
     document.querySelectorAll('.ring-btn').forEach(b=>b.classList.remove('act'));
@@ -587,7 +598,11 @@ class MolEditor{
     const c=this._cv('--bn');cx.strokeStyle=c;cx.lineWidth=2;cx.lineCap='round';cx.setLineDash([]);
     const g=3;
     if(order===1){cx.beginPath();cx.moveTo(a1.x,a1.y);cx.lineTo(a2.x,a2.y);cx.stroke();}
-    else if(order===2){
+    else if(order===1.5){
+      cx.beginPath();cx.moveTo(a1.x,a1.y);cx.lineTo(a2.x,a2.y);cx.stroke();
+      const inset=Math.min(7,len*.18);
+      cx.beginPath();cx.moveTo(a1.x+dx/len*inset+nx*g,a1.y+dy/len*inset+ny*g);cx.lineTo(a2.x-dx/len*inset+nx*g,a2.y-dy/len*inset+ny*g);cx.stroke();
+    }else if(order===2){
       for(const o of[g,-g]){cx.beginPath();cx.moveTo(a1.x+nx*o,a1.y+ny*o);cx.lineTo(a2.x+nx*o,a2.y+ny*o);cx.stroke();}
     }else{
       for(const o of[0,g*1.6,-g*1.6]){cx.beginPath();cx.moveTo(a1.x+nx*o,a1.y+ny*o);cx.lineTo(a2.x+nx*o,a2.y+ny*o);cx.stroke();}
@@ -619,7 +634,8 @@ class MolEditor{
     const sv=new Set();
     const dfs=(id,pb)=>{
       sv.add(id);const a=this.atoms.find(a=>a.id===id);
-      let s=['B','C','N','O','P','S','F','Cl','Br','I'].includes(a.el)?a.el:`[${a.el}]`;
+      const aromaticSymbol={C:'c',N:'n',O:'o',P:'p',S:'s'}[a.el];
+      let s=a.aro&&aromaticSymbol?aromaticSymbol:(['B','C','N','O','P','S','F','Cl','Br','I'].includes(a.el)?a.el:`[${a.el}]`);
       for(const nb of(this.adj[id]||[])){
         if(nb.bid===pb)continue;
         if(sv.has(nb.nb)&&rbs.has(nb.bid)){const num=rbs.get(nb.bid);const b=this.bonds.find(b=>b.id===nb.bid);s+=(b.order===2?'=':b.order===3?'#':'')+(num>9?`%${num}`:String(num));}
@@ -633,6 +649,20 @@ class MolEditor{
     return parts.join('.');
   }
   _upd(){document.getElementById('si').value=this.toSMILES();}
+  correctLinearity(){
+    if(!this.atoms.length)return;
+    const currentInput=document.getElementById('si').value;
+    try{
+      const parsed={
+        atoms:this.atoms.map(a=>({id:a.id,el:a.el,aro:!!a.aro,hI:a.hI||0,ch:a.ch||0})),
+        bonds:this.bonds.map(b=>({id:b.id,from:b.from,to:b.to,o:b.order,ar:b.order===1.5})),
+        adj:JSON.parse(JSON.stringify(this.adj))
+      };
+      this._saveHist();
+      this.loadFromParsed(parsed);
+      document.getElementById('si').value=currentInput;
+    }catch(e){console.warn('Não foi possível corrigir a geometria:',e.message);}
+  }
   clear(){this._saveHist();this.atoms=[];this.bonds=[];this.adj={};this.nA=0;this.nB=0;this.sel=-1;this.drag=null;this.draw();}
 
   // ── Load a parsed mol into the editor with auto-layout ──────────
@@ -673,17 +703,65 @@ class MolEditor{
       if(!placed.has(a.id)){dfs(a.id,sx,sy,0,0);sx+=STEP*3;}
     }
 
+    // Regularize simple aromatic rings instead of leaving them as DFS zigzags.
+    const aromaticSeen=new Set();
+    for(const start of parsedMol.atoms.filter(a=>a.aro)){
+      if(aromaticSeen.has(start.id))continue;
+      const component=[],queue=[start.id];aromaticSeen.add(start.id);
+      while(queue.length){
+        const id=queue.shift();component.push(id);
+        for(const nb of(parsedMol.adj[id]||[])){
+          if(parsedMol.atoms[nb.nb]?.aro&&!aromaticSeen.has(nb.nb)){aromaticSeen.add(nb.nb);queue.push(nb.nb);}
+        }
+      }
+      if(component.length!==6||component.some(id=>(parsedMol.adj[id]||[]).filter(nb=>parsedMol.atoms[nb.nb]?.aro).length!==2))continue;
+      const order=[component[0]],used=new Set(order);
+      while(order.length<component.length){
+        const current=order[order.length-1];
+        const next=(parsedMol.adj[current]||[]).find(nb=>parsedMol.atoms[nb.nb]?.aro&&!used.has(nb.nb));
+        if(!next)break;
+        order.push(next.nb);used.add(next.nb);
+      }
+      if(order.length!==6)continue;
+      const center=order.reduce((sum,id)=>({x:sum.x+pos[id].x/6,y:sum.y+pos[id].y/6}),{x:0,y:0});
+      const radius=STEP;
+      order.forEach((id,i)=>{const angle=i*Math.PI/3;pos[id]={x:center.x+radius*Math.cos(angle),y:center.y+radius*Math.sin(angle)};});
+      const moved=new Set(order);
+      for(const ringId of order){
+        for(const nb of(parsedMol.adj[ringId]||[])){
+          if(parsedMol.atoms[nb.nb]?.aro||moved.has(nb.nb))continue;
+          const oldPos=pos[nb.nb],ringPos=pos[ringId];
+          if(!oldPos)continue;
+          const angle=Math.atan2(ringPos.y-center.y,ringPos.x-center.x);
+          const target={x:ringPos.x+Math.cos(angle)*STEP,y:ringPos.y+Math.sin(angle)*STEP};
+          const shift={x:target.x-oldPos.x,y:target.y-oldPos.y};
+          const queue=[nb.nb];moved.add(nb.nb);
+          while(queue.length){
+            const id=queue.shift();pos[id]={x:pos[id].x+shift.x,y:pos[id].y+shift.y};
+            for(const next of(parsedMol.adj[id]||[])){
+              if(!parsedMol.atoms[next.nb]?.aro&&!moved.has(next.nb)){moved.add(next.nb);queue.push(next.nb);}
+            }
+          }
+        }
+      }
+    }
+
     // Center result
     const xs=parsedMol.atoms.map(a=>(pos[a.id]||{x:sx}).x);
     const ys=parsedMol.atoms.map(a=>(pos[a.id]||{y:sy}).y);
     const dx=W/2-(Math.min(...xs)+Math.max(...xs))/2;
     const dy=H/2-(Math.min(...ys)+Math.max(...ys))/2;
+    const fitted=parsedMol.atoms.map(a=>({x:(pos[a.id]||{x:sx}).x+dx,y:(pos[a.id]||{y:sy}).y+dy}));
+    const minFitX=Math.min(...fitted.map(p=>p.x)),maxFitX=Math.max(...fitted.map(p=>p.x));
+    const minFitY=Math.min(...fitted.map(p=>p.y)),maxFitY=Math.max(...fitted.map(p=>p.y));
+    const scale=Math.min(1,(W-32)/(maxFitX-minFitX||1),(H-32)/(maxFitY-minFitY||1));
+    const fitX=W/2-(minFitX+maxFitX)*scale/2,fitY=H/2-(minFitY+maxFitY)*scale/2;
 
     // Add atoms to editor
     const idMap={};
     for(const a of parsedMol.atoms){
       const p=pos[a.id]||{x:W/2,y:H/2};
-      idMap[a.id]=this._addA(p.x+dx,p.y+dy,a.el);
+      idMap[a.id]=this._addA(p.x*scale+fitX+dx*scale,p.y*scale+fitY+dy*scale,a.el,a.aro);
     }
 
     // Add bonds (aromatic 1.5 → display as 1 single; round others)
@@ -691,7 +769,7 @@ class MolEditor{
     for(const b of parsedMol.bonds){
       const k=Math.min(b.from,b.to)+','+Math.max(b.from,b.to);
       if(seen.has(k))continue;seen.add(k);
-      const ord=b.o===1.5?1:(Math.round(b.o)||1);
+      const ord=b.o===1.5?1.5:(Math.round(b.o)||1);
       this._addB(idMap[b.from],idMap[b.to],Math.max(1,Math.min(3,ord)));
     }
 
@@ -996,10 +1074,12 @@ function analyzeStructure(mol, smiles){
   const atoms=mol.atoms, bonds=mol.bonds, adj=mol.adj;
 
   // Helper: get neighbors of atom id
-  const nbrs=(aid)=>(adj[aid]||[]).map(n=>({a:atoms[n.nb],b:bonds[n.bid],id:n.nb,bid:n.bid}));
+  const nbrs=(aid)=>(adj[aid]||[])
+    .map(n=>({a:atoms[n.nb],b:bonds[n.bid],id:n.nb,bid:n.bid}))
+    .filter(n=>n.a&&n.b);
 
   // Helper: does atom have carbonyl directly (C=O)?
-  const hasCO=(aid)=>(adj[aid]||[]).some(n=>{const b=bonds[n.bid];return b.o===2&&atoms[n.nb].el==='O';});
+  const hasCO=(aid)=>(adj[aid]||[]).some(n=>{const b=bonds[n.bid],a=atoms[n.nb];return b?.o===2&&a?.el==='O';});
 
   // Detect functional groups
   const fg={
@@ -1025,14 +1105,14 @@ function analyzeStructure(mol, smiles){
   for(const a of atoms){
     // Carbonyl-containing groups: find C with C=O
     if(a.el==='C'&&hasCO(a.id)){
-      const oxyDbl=nbrs(a.id).filter(n=>bonds[n.bid].o===2&&atoms[n.nb].el==='O');
-      const oxySgl=nbrs(a.id).filter(n=>bonds[n.bid].o===1&&atoms[n.nb].el==='O');
-      const nitNb=nbrs(a.id).filter(n=>bonds[n.bid].o===1&&atoms[n.nb].el==='N');
-      const cNb=nbrs(a.id).filter(n=>atoms[n.nb].el==='C');
+      const oxyDbl=nbrs(a.id).filter(n=>n.b.o===2&&n.a.el==='O');
+      const oxySgl=nbrs(a.id).filter(n=>n.b.o===1&&n.a.el==='O');
+      const nitNb=nbrs(a.id).filter(n=>n.b.o===1&&n.a.el==='N');
+      const cNb=nbrs(a.id).filter(n=>n.a.el==='C');
       // Check for OH neighbor (acid) — O with hI>0 singly bonded
-      const ohNb=oxySgl.filter(n=>atoms[n.nb].hI>0);
+      const ohNb=oxySgl.filter(n=>n.a.hI>0);
       // Check for O bonded to C (ester)
-      const oCNb=oxySgl.filter(n=>atoms[n.nb].hI===0&&nbrs(n.id).some(n2=>n2.id!==a.id&&atoms[n2.id].el==='C'));
+      const oCNb=oxySgl.filter(n=>n.a.hI===0&&nbrs(n.id).some(n2=>n2.id!==a.id&&n2.a.el==='C'));
       if(ohNb.length>0){
         fg['Ácido carboxílico']++;
       } else if(oCNb.length>0&&nitNb.length===0){
@@ -1041,7 +1121,7 @@ function analyzeStructure(mol, smiles){
         fg['Amida']++;
       } else {
         // Aldehyde: carbonyl C with hI>0 on C itself, or only 1 C neighbor
-        const nonONonDblNb=nbrs(a.id).filter(n=>bonds[n.bid].o!==2&&atoms[n.nb].el!=='O');
+        const nonONonDblNb=nbrs(a.id).filter(n=>n.b.o!==2&&n.a.el!=='O');
         const isAldehyde=a.hI>0||(nonONonDblNb.length===0&&oxyDbl.length===1);
         // Also detect terminal carbonyl = aldehyde (only one heavy neighbor besides =O)
         const heavyNonODbl=nbrs(a.id).filter(n=>bonds[n.bid].o!==2);
@@ -1049,7 +1129,7 @@ function analyzeStructure(mol, smiles){
           fg['Aldeído']++;
         } else {
           // Ketone: C bonded to two Cs (via single bonds) and one =O
-          const cSglNb=nbrs(a.id).filter(n=>bonds[n.bid].o===1&&atoms[n.nb].el==='C');
+          const cSglNb=nbrs(a.id).filter(n=>n.b.o===1&&n.a.el==='C');
           if(cSglNb.length>=2){
             fg['Cetona']++;
           } else if(cSglNb.length===1){
@@ -1062,7 +1142,7 @@ function analyzeStructure(mol, smiles){
 
     // Alcohol: O with hI>0, not adjacent to C=O
     if(a.el==='O'&&a.hI>0){
-      const adjCO=nbrs(a.id).some(n=>atoms[n.nb].el==='C'&&hasCO(n.id));
+      const adjCO=nbrs(a.id).some(n=>n.a.el==='C'&&hasCO(n.id));
       if(!adjCO) fg['Álcool']++;
     }
 
@@ -1070,7 +1150,7 @@ function analyzeStructure(mol, smiles){
     if(a.el==='O'&&a.hI===0){
       const isDbl=(adj[a.id]||[]).some(n=>bonds[n.bid].o===2);
       if(!isDbl){
-        const cNb=nbrs(a.id).filter(n=>atoms[n.nb].el==='C');
+        const cNb=nbrs(a.id).filter(n=>n.a.el==='C');
         if(cNb.length>=2) fg['Éter']++;
       }
     }
@@ -1093,15 +1173,15 @@ function analyzeStructure(mol, smiles){
 
     // Nitro: N bonded to 2 oxygens, at least one with bond order 2
     if(a.el==='N'){
-      const oNb=nbrs(a.id).filter(n=>atoms[n.nb].el==='O');
+      const oNb=nbrs(a.id).filter(n=>n.a.el==='O');
       const dblO=oNb.filter(n=>bonds[n.bid].o===2);
       if(oNb.length>=2&&dblO.length>=1) fg['Nitro']++;
     }
 
     // Sulfonamide: S with 2 double-bond O AND bonded to N
     if(a.el==='S'){
-      const dblO=(adj[a.id]||[]).filter(n=>bonds[n.bid].o===2&&atoms[n.nb].el==='O');
-      const nNb=nbrs(a.id).filter(n=>atoms[n.nb].el==='N');
+      const dblO=nbrs(a.id).filter(n=>n.b.o===2&&n.a.el==='O');
+      const nNb=nbrs(a.id).filter(n=>n.a.el==='N');
       if(dblO.length>=2&&nNb.length>=1) fg['Sulfonamida']++;
     }
 
@@ -1193,7 +1273,7 @@ function analyzeStructure(mol, smiles){
       if(a.el==='C'&&!a.aro){
         const deg=(adj[a.id]||[]).length;
         if(deg===4){
-          const nbEls=nbrs(a.id).map(n=>atoms[n.nb].el);
+          const nbEls=nbrs(a.id).map(n=>n.a.el);
           const uniqueEls=new Set(nbEls);
           if(uniqueEls.size>=3) stereoCenters++;
         }
@@ -1317,15 +1397,15 @@ function renderLipinski(p,pcData){
     <div class="sec">Regra dos 5 de Lipinski</div>
     <div class="pg">
       ${card('Peso Molecular',mw.toFixed(1),'≤ 500 Da',mwOk,'Da',ms)}
-      ${card('LogP (XLogP)',lp!=null?lp.toFixed(2):'—','≤ 5',lpOk,'',lps)}
-      ${card('HBD — Doadores H',hbd,'≤ 5',hbdOk,'',ms)}
-      ${card('HBA — Aceitadores H',hba,'≤ 10',hbaOk,'',ms)}
-      <div class="pcard ${psaOk?'ok':'warn'}"><div class="pn">PSA ${srcTag(ps)}</div><div class="pv">${psa!=null?psa.toFixed(1):'—'}<span style="font-size:.6rem;font-weight:400"> Å²</span></div><div class="pu">Limite: ≤ 140 Å²</div><span class="pb">${psaOk?'✓ OK':'⚠ ALTO'}</span></div>
+      ${card('<span class="term" data-tip="LogP — Octanol-water partition coefficient / Coeficiente de partição octanol-água">LogP</span> (XLogP)',lp!=null?lp.toFixed(2):'—','≤ 5',lpOk,'',lps)}
+      ${card('<span class="term" data-tip="HBD — Hydrogen Bond Donor / Doador de ligação de hidrogênio">HBD</span> — Doadores H',hbd,'≤ 5',hbdOk,'',ms)}
+      ${card('<span class="term" data-tip="HBA — Hydrogen Bond Acceptor / Aceitador de ligação de hidrogênio">HBA</span> — Aceitadores H',hba,'≤ 10',hbaOk,'',ms)}
+      <div class="pcard ${psaOk?'ok':'warn'}"><div class="pn"><span class="term" data-tip="PSA — Polar Surface Area / Área de superfície polar">PSA</span> ${srcTag(ps)}</div><div class="pv">${psa!=null?psa.toFixed(1):'—'}<span style="font-size:.6rem;font-weight:400"> Å²</span></div><div class="pu">Limite: ≤ 140 Å²</div><span class="pb">${psaOk?'✓ OK':'⚠ ALTO'}</span></div>
       ${cardN('Fórmula Molecular',formula,'',ms)}
     </div>
     <div class="vrd ${viol===0?'ok':'fail'}" style="margin-top:2px">${viol===0?'✓ Boa biodisponibilidade oral prevista':'✗ '+viol+' violação(ões) da Ro5 — biodisponibilidade comprometida'}</div>
     <div class="sec">Perfil ADME Estimado</div>
-    <div class="adme-grid">${adme.map(r=>`<div class="adme-row"><span class="adme-lbl">${r.l}</span><span class="adme-val ${r.c}">${r.v}</span></div>`).join('')}</div>
+    <div class="adme-grid">${adme.map(r=>`<div class="adme-row"><span class="adme-lbl">${r.l==='Fsp³'?'<span class="term" data-tip="Fsp³ — Fraction of sp³-hybridized carbons / Fração de carbonos hibridizados sp³">Fsp³</span>':r.l}</span><span class="adme-val ${r.c}">${r.v}</span></div>`).join('')}</div>
     ${srcNote}
     <div class="note">📚 <strong>Lipinski Ro5:</strong> MW≤500, LogP≤5, HBD≤5, HBA≤10. PSA≤140 Å². Fsp³>0.3 associado a melhor solubilidade e seletividade.</div>`;
 }
@@ -1365,7 +1445,7 @@ function renderPKa(mol,props,pcData){
     <div class="sec">Parâmetros em pH 7.4 (Fisiológico)</div>
     <div class="logd-box">
       <div class="logd-title">Parâmetros Calculados</div>
-      <div class="logd-row"><span class="logd-lbl">LogP (neutro) ${lps}</span><span class="logd-val">${logpForLogD.toFixed(2)}</span></div>
+      <div class="logd-row"><span class="logd-lbl"><span class="term" data-tip="LogP — Octanol-water partition coefficient / Coeficiente de partição octanol-água">LogP</span> (neutro) ${lps}</span><span class="logd-val">${logpForLogD.toFixed(2)}</span></div>
       <div class="logd-row"><span class="logd-lbl">LogD (pH 7.4, corrigido)</span><span class="logd-val">${logd.toFixed(2)}</span></div>
       <div class="logd-row"><span class="logd-lbl">Carga média em pH 7.4</span><span class="logd-val">${charge.toFixed(2)}</span></div>
       <div class="logd-row"><span class="logd-lbl">Peso Molecular ${mws}</span><span class="logd-val">${(pcData?.mw??props.mw).toFixed(3)} Da</span></div>
@@ -1416,9 +1496,9 @@ function renderChEMBL(chData){
     ${indicHtml}
     ${chData.alogp!=null?`<div class="sec">Propriedades ChEMBL</div>
     <div class="logd-box">
-      <div class="logd-row"><span class="logd-lbl">AlogP</span><span class="logd-val">${chData.alogp.toFixed(2)}</span></div>
-      <div class="logd-row"><span class="logd-lbl">PSA (Å²)</span><span class="logd-val">${chData.psa?.toFixed(1)||'—'}</span></div>
-      <div class="logd-row"><span class="logd-lbl">HBD / HBA</span><span class="logd-val">${chData.hbd??'—'} / ${chData.hba??'—'}</span></div>
+      <div class="logd-row"><span class="logd-lbl"><span class="term" data-tip="AlogP — Calculated octanol-water partition coefficient / Coeficiente de partição octanol-água calculado">AlogP</span></span><span class="logd-val">${chData.alogp.toFixed(2)}</span></div>
+      <div class="logd-row"><span class="logd-lbl"><span class="term" data-tip="PSA — Polar Surface Area / Área de superfície polar">PSA</span> (Å²)</span><span class="logd-val">${chData.psa?.toFixed(1)||'—'}</span></div>
+      <div class="logd-row"><span class="logd-lbl"><span class="term" data-tip="HBD — Hydrogen Bond Donor / Doador de ligação de hidrogênio">HBD</span> / <span class="term" data-tip="HBA — Hydrogen Bond Acceptor / Aceitador de ligação de hidrogênio">HBA</span></span><span class="logd-val">${chData.hbd??'—'} / ${chData.hba??'—'}</span></div>
       <div class="logd-row"><span class="logd-lbl">Lig. Rotacionáveis</span><span class="logd-val">${chData.rtb??'—'}</span></div>
       <div class="logd-row"><span class="logd-lbl">Regra dos 3 (Ro3)</span><span class="adme-val ${chData.ro3?'av-hi':'av-lo'}">${chData.ro3?'Passa':'Não passa'}</span></div>
     </div>`:''}
@@ -1433,16 +1513,34 @@ function showTab(id,el){
   if(el)el.classList.add('act');
 }
 
+function looksLikeSmiles(value){
+  return /^[0-9BCNOPSFIHbcnopsilr@+\-\[\]()=#$.\\/:]+$/.test(value);
+}
+
+async function resolveMoleculeInput(input){
+  if(looksLikeSmiles(input))return{smiles:input,mol:parseSMILES(input)};
+  const enc=encodeURIComponent(input);
+  const r=await _fetchWithRetry(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${enc}/property/IsomericSMILES/JSON`,1,9000);
+  if(!r)throw new Error('Nome IUPAC não encontrado no PubChem');
+  const p=(await r.json())?.PropertyTable?.Properties?.[0];
+  const smiles=p?.SMILES||p?.IsomericSMILES||p?.ConnectivitySMILES;
+  if(!smiles)throw new Error('PubChem não retornou um SMILES');
+  return{smiles,mol:parseSMILES(smiles)};
+}
+
 let _analyzing=false;
 async function analyze(){
   if(_analyzing)return;
-  const sm=document.getElementById('si').value.trim();
-  if(!sm)return;
-  let mol;
-  try{mol=parseSMILES(sm);}catch(e){alert('SMILES inválido.');return;}
+  const input=document.getElementById('si').value.trim();
+  if(!input)return;
+  let sm,mol;
+  try{
+    ({smiles:sm,mol}=await resolveMoleculeInput(input));
+  }catch(e){alert('SMILES ou nome IUPAC não encontrado.');return;}
 
   // Load into editor for modification
   editor.loadFromParsed(mol);
+  document.getElementById('si').value=input;
 
   // Render structure immediately
   renderStructure(sm,mol,null);
@@ -1478,11 +1576,13 @@ function loadTpl(){const s=document.getElementById('tpsel');if(!s.value)return;d
 
 window.addEventListener('resize',()=>editor._rsz());
 
-// Demo
+// Default molecule: AAS (acetylsalicylic acid)
 setTimeout(()=>{document.getElementById('si').value='CC(=O)Oc1ccccc1C(=O)O';analyze();},400);
 </script>
 '''
 
-with open('/tmp/chemmed5.html', 'w') as f:
+output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'chemmed5.html')
+with open(output_path, 'w', encoding='utf-8') as f:
     f.write(html)
-print(f"Done: {os.path.getsize('/tmp/chemmed5.html'):,} bytes")
+print(f"Done: {os.path.getsize(output_path):,} bytes")
+webbrowser.open(output_path)
