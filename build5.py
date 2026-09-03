@@ -917,7 +917,7 @@ function calcProps(mol){
 // ─── PUBCHEM (with retry) ────────────────────────────────
 const _pcCache=new Map();
 
-async function _fetchWithRetry(url,retries=2,timeout=9000){
+async function _fetchWithRetry(url,retries=2,timeout=12000){
   for(let attempt=0;attempt<=retries;attempt++){
     try{
       const controller=new AbortController();
@@ -927,13 +927,16 @@ async function _fetchWithRetry(url,retries=2,timeout=9000){
         clearTimeout(tid);
         if(r.ok)return r;
         if(r.status===404||r.status===400)return null; // compound not found — don't retry
+        if(r.status>=500){if(attempt<retries)throw new Error(`Server error ${r.status}`);return null;} // retry on 5xx
+        return null; // other non-2xx errors
       }catch(e){
         clearTimeout(tid);
         throw e;
       }
     }catch(e){
       if(attempt===retries)throw e;
-      await new Promise(res=>setTimeout(res,1000*(attempt+1))); // 1s, 2s backoff
+      const delay=Math.min(1000*(attempt+1)*Math.pow(2,attempt),8000); // exponential backoff, max 8s
+      await new Promise(res=>setTimeout(res,delay));
     }
   }
   return null;
@@ -947,7 +950,7 @@ async function fetchPubChem(smiles){
   const props='MolecularWeight,XLogP,HBondDonorCount,HBondAcceptorCount,TPSA,MolecularFormula,RotatableBondCount';
   const url=`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${enc}/property/${props}/JSON`;
   try{
-    const r=await _fetchWithRetry(url);
+    const r=await _fetchWithRetry(url,2,12000); // 2 retries, 12s timeout
     if(!r)return null;
     const j=await r.json();
     const p=j?.PropertyTable?.Properties?.[0];
@@ -956,16 +959,16 @@ async function fetchPubChem(smiles){
     let cid=null;
     try{
       const cidUrl=`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${enc}/cids/JSON`;
-      const cr=await _fetchWithRetry(cidUrl,1,5000);
+      const cr=await _fetchWithRetry(cidUrl,2,8000); // 2 retries, 8s timeout
       if(cr){const cj=await cr.json();cid=cj?.IdentifierList?.CID?.[0]||null;}
-    }catch(e){}
+    }catch(e){console.warn('CID lookup failed:',e.message);}
     // IUPACName fetched separately via CID (more stable than SMILES-based)
     let iupac=null;
     if(cid){
       try{
-        const ir=await _fetchWithRetry(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/IUPACName/JSON`,1,6000);
+        const ir=await _fetchWithRetry(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/IUPACName/JSON`,2,8000); // 2 retries, 8s timeout
         if(ir){const ij=await ir.json();iupac=ij?.PropertyTable?.Properties?.[0]?.IUPACName||null;}
-      }catch(e){}
+      }catch(e){console.warn('IUPAC lookup failed:',e.message);}
     }
     const result={mw:parseFloat(p.MolecularWeight),lp:p.XLogP!=null?parseFloat(p.XLogP):null,hbd:p.HBondDonorCount,hba:p.HBondAcceptorCount,psa:p.TPSA!=null?parseFloat(p.TPSA):null,rb:p.RotatableBondCount,formula:p.MolecularFormula,iupac,cid,source:'pubchem'};
     _pcCache.set(key,result);
