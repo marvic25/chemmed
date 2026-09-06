@@ -55,7 +55,13 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
 .thm{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:.85rem;transition:background .2s}
 .thm:hover{background:rgba(255,255,255,.25)}
 /* MAIN */
-.main{display:grid;grid-template-columns:388px 1fr;gap:9px;padding:9px;overflow:hidden}
+.main{display:grid;grid-template-columns:1fr;gap:9px;padding:9px;overflow:hidden;transition:grid-template-columns .3s ease}
+.main.pnl-open{grid-template-columns:388px 1fr}
+.main-btn-panel{position:fixed;bottom:30px;left:14px;background:var(--ac);color:#fff;border:none;border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;box-shadow:0 4px 16px rgba(79,95,212,.35);transition:all .2s;z-index:100}
+.main-btn-panel:hover{transform:scale(1.1);box-shadow:0 6px 20px rgba(79,95,212,.45)}
+.main-btn-panel.hidden{opacity:0;pointer-events:none}
+.pnl-close-btn{position:absolute;top:5px;right:5px;background:transparent;border:none;color:var(--tx);font-size:1.2rem;cursor:pointer;opacity:.6;transition:opacity .2s;z-index:50}
+.pnl-close-btn:hover{opacity:1}
 /* PANEL */
 .pnl{background:var(--sf);border:1px solid var(--bd);border-radius:11px;display:flex;flex-direction:column;overflow:hidden}
 /* TOOLBAR */
@@ -329,7 +335,8 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
     </div>
 
     <!-- ANALYSIS -->
-    <div class="pnl">
+    <div class="pnl" id="analysis-pnl">
+      <button class="pnl-close-btn" onclick="toggleAnalysisPanel()" title="Fechar análise">✕</button>
       <div class="tabs">
         <div class="tab act" onclick="showTab('str',this)">🔬 Estrutura</div>
         <div class="tab" onclick="showTab('lip',this)">⚖️ Lipinski + Prop.</div>
@@ -363,6 +370,9 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
       </div>
     </div>
   </div>
+
+  <!-- FLOATING PANEL TOGGLE BUTTON -->
+  <button class="main-btn-panel" id="main-toggle-btn" onclick="toggleAnalysisPanel()" title="Abrir/fechar análise">📊</button>
 
   <!-- FOOTER -->
   <footer class="ftr">
@@ -463,6 +473,14 @@ function toggleTheme(){
   else if(t==='dark')r.dataset.theme='light';
   else delete r.dataset.theme;
   editor.draw();
+}
+
+// ─── PANEL TOGGLE ─────────────────────────────────────────
+function toggleAnalysisPanel(){
+  const main=document.querySelector('.main');
+  const btn=document.getElementById('main-toggle-btn');
+  main.classList.toggle('pnl-open');
+  btn.classList.toggle('hidden',main.classList.contains('pnl-open'));
 }
 
 // ─── PUBCHEM STATUS ───────────────────────────────────────
