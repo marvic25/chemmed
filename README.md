@@ -1,6 +1,6 @@
 # ChemMed — Editor Molecular Web
 
-Aplicativo web para a turma de **Química Médica (UFPE)**, desenvolvido por **Msc. Marcos Gregório**.
+Aplicativo web para ensino de **Química Médica — Farmácia (UNINASSAU)**, desenvolvido por **Msc. Marcos Gregório**.
 
 Inspirado no ChemDraw, combina um editor gráfico de moléculas com análise farmacoquímica completa.
 
@@ -29,5 +29,6 @@ python3 build5.py                    # gera chemmed5.html (~267 KB, self-contain
 
 ## Créditos
 
-Desenvolvido por **Msc. Marcos Gregório** · UFPE — Química Médica  
+Desenvolvido por **Msc. Marcos Gregório** · UNINASSAU — Farmácia  
+Uso restrito aos estudantes de Farmácia em aulas com Msc. Marcos Gregório  
 Biblioteca de estruturas: [SmilesDrawer](https://github.com/reymond-group/smilesDrawer)
