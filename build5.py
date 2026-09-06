@@ -436,6 +436,23 @@ function getValence(element){
   };
   return valenceTable[element]||{maxBonds:2,lonePairs:2,hybrid:'sp3',naturalCharge:0};
 }
+function validateBondCreation(editor,fromAtomId,toAtomId,order){
+  const fa=editor.atoms.find(a=>a.id===fromAtomId);
+  const ta=editor.atoms.find(a=>a.id===toAtomId);
+  if(!fa||!ta)return{valid:false,msg:'Átomo inválido'};
+  const fv=getValence(fa.el),tv=getValence(ta.el);
+  const fBonds=(editor.adj[fromAtomId]||[]).reduce((sum,nb)=>{
+    const b=editor.bonds.find(b=>(b.from===fromAtomId&&b.to===nb.nb)||(b.from===nb.nb&&b.to===fromAtomId));
+    return sum+(b?.order||1);
+  },0);
+  const tBonds=(editor.adj[toAtomId]||[]).reduce((sum,nb)=>{
+    const b=editor.bonds.find(b=>(b.from===toAtomId&&b.to===nb.nb)||(b.from===nb.nb&&b.to===toAtomId));
+    return sum+(b?.order||1);
+  },0);
+  if(fBonds+order>fv.maxBonds)return{valid:false,msg:`${fa.el} excede valência (máx ${fv.maxBonds})`};
+  if(tBonds+order>tv.maxBonds)return{valid:false,msg:`${ta.el} excede valência (máx ${tv.maxBonds})`};
+  return{valid:true,msg:`Ligação válida`};
+}
 const MAX_HIST=20;
 
 class MolEditor{
