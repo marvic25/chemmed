@@ -242,6 +242,7 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
         <button class="btn" onclick="editor.fitToView()" data-tip="Ajustar canvas ao tamanho do desenho">◀▶</button>
         <button class="btn" onclick="editor.optimize2D()" data-tip="Organizar 2D - otimizar geometria">↔</button>
         <button class="btn" id="geom-warn-btn" onclick="toggleGeomWarnings()" data-tip="Mostrar/ocultar problemas de geometria">⚠ Ângulos</button>
+        <button class="btn" id="lone-btn" onclick="toggleLonePairs()" data-tip="Mostrar/ocultar pares de elétrons livres">🔴 Pares</button>
         <button class="btn" onclick="copySmiles()" data-tip="Copiar o SMILES atual">⧉ SMILES</button>
         <button class="btn" onclick="editor.exportPng()" data-tip="Baixar a estrutura desenhada como PNG">▣ PNG</button>
         <div class="tbs"></div>
@@ -1208,6 +1209,12 @@ function toggleGeomWarnings(){
   }else{
     setEditorStatus('Validação de ângulos desativada');
   }
+  editor.draw();
+}
+function toggleLonePairs(){
+  editor.showLonePairs=!editor.showLonePairs;
+  document.getElementById('lone-btn').classList.toggle('act',editor.showLonePairs);
+  setEditorStatus(editor.showLonePairs?'Pares de elétrons livres visíveis':'Pares de elétrons ocultados');
   editor.draw();
 }
 function setFuncGroup(group){
