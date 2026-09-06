@@ -481,11 +481,16 @@ function renderLonePairs(cx,x,y,atomId,editor){
   const r=ATOM_R[a.el]||12;
   cx.fillStyle=editor._cv('--ac');cx.globalAlpha=0.6;
   const n=v.lonePairs;
+  const dotRadius=1.8,dotSpacing=3.5;
   for(let i=0;i<n;i++){
     const ang=2*Math.PI*i/Math.max(n,2);
-    const px=x+(r+8)*Math.cos(ang);
-    const py=y+(r+8)*Math.sin(ang);
-    cx.beginPath();cx.arc(px,py,2.5,0,2*Math.PI);cx.fill();
+    const baseX=x+(r+9)*Math.cos(ang);
+    const baseY=y+(r+9)*Math.sin(ang);
+    // desenhar par: dois dots próximos
+    const perpX=-Math.sin(ang)*dotSpacing/2;
+    const perpY=Math.cos(ang)*dotSpacing/2;
+    cx.beginPath();cx.arc(baseX+perpX,baseY+perpY,dotRadius,0,2*Math.PI);cx.fill();
+    cx.beginPath();cx.arc(baseX-perpX,baseY-perpY,dotRadius,0,2*Math.PI);cx.fill();
   }
   cx.globalAlpha=1;
 }
@@ -1937,10 +1942,12 @@ async function analyze(){
 
   // Load into editor for modification
   editor.loadFromParsed(mol);
-  document.getElementById('si').value=input;
+  // Update SMILES to editor's version (may be normalized)
+  const editorSMILES=editor.toSMILES();
+  document.getElementById('si').value=editorSMILES;
 
-  // Render structure immediately
-  renderStructure(sm,mol,null);
+  // Render structure immediately with editor's SMILES
+  renderStructure(editorSMILES,mol,null);
   showTab('lip',document.querySelectorAll('.tab')[1]);
 
   // Button loading state
