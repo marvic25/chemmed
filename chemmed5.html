@@ -521,6 +521,22 @@ function validateBondCreation(editor,fromAtomId,toAtomId,order){
   if(tBonds+order>tv.maxBonds)return{valid:false,msg:`${ta.el} excede valência (máx ${tv.maxBonds})`};
   return{valid:true,msg:`Ligação válida`};
 }
+function renderLonePairs(cx,x,y,atomId,editor){
+  if(!editor.showLonePairs)return;
+  const a=editor.atoms.find(a=>a.id===atomId);
+  if(!a)return;
+  const v=getValence(a.el);
+  const r=ATOM_R[a.el]||12;
+  cx.fillStyle=editor._cv('--ac');cx.globalAlpha=0.6;
+  const n=v.lonePairs;
+  for(let i=0;i<n;i++){
+    const ang=2*Math.PI*i/Math.max(n,2);
+    const px=x+(r+8)*Math.cos(ang);
+    const py=y+(r+8)*Math.sin(ang);
+    cx.beginPath();cx.arc(px,py,2.5,0,2*Math.PI);cx.fill();
+  }
+  cx.globalAlpha=1;
+}
 const MAX_HIST=20;
 
 class MolEditor{
