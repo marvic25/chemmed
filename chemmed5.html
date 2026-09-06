@@ -868,16 +868,41 @@ class MolEditor{
         const ex=Math.hypot(this.drag.cx-fa.x,this.drag.cy-fa.y)>22;
         const tx=ex?fa.x+Math.cos(ang)*BOND_LEN:this.drag.cx;
         const ty=ex?fa.y+Math.sin(ang)*BOND_LEN:this.drag.cy;
-        // snap target preview
         const tgt=this._atomAt(this.drag.cx,this.drag.cy);
-        cx.save();cx.strokeStyle=this._cv('--ac');cx.lineWidth=2;cx.setLineDash([4,4]);cx.globalAlpha=.65;
-        cx.beginPath();cx.moveTo(fa.x,fa.y);cx.lineTo(tgt>=0&&tgt!==fa.id?this.atoms.find(a=>a.id===tgt).x:tx,tgt>=0&&tgt!==fa.id?this.atoms.find(a=>a.id===tgt).y:ty);cx.stroke();
-        // new atom preview
+        const isSnapTarget=tgt>=0&&tgt!==fa.id;
+        const endX=isSnapTarget?this.atoms.find(a=>a.id===tgt).x:tx;
+        const endY=isSnapTarget?this.atoms.find(a=>a.id===tgt).y:ty;
+
+        cx.save();
+        // bond line
+        cx.strokeStyle=isSnapTarget?this._cv('--ok'):this._cv('--ac');
+        cx.lineWidth=2.5;cx.setLineDash([4,4]);cx.globalAlpha=.7;
+        cx.beginPath();cx.moveTo(fa.x,fa.y);cx.lineTo(endX,endY);cx.stroke();
+
+        // bond order indicator
+        if(this.bo>1){
+          cx.fillStyle=this._cv('--ac');cx.font='bold 8px monospace';
+          cx.textAlign='center';cx.textBaseline='middle';
+          cx.globalAlpha=.5;cx.fillText(this.bo,fa.x+(endX-fa.x)/2,fa.y+(endY-fa.y)/2-6);
+        }
+
+        // new atom preview (H or other element)
         if(tgt<0&&ex){
-          cx.fillStyle=this._cv('--ac');cx.globalAlpha=.4;cx.beginPath();cx.arc(tx,ty,ATOM_R[this.el]||12,0,2*Math.PI);cx.fill();
-          cx.globalAlpha=.8;cx.font=`bold 11px 'Space Mono',monospace`;cx.textAlign='center';cx.textBaseline='middle';
+          cx.globalAlpha=this.el==='H'?.5:.4;
+          cx.fillStyle=this.el==='H'?this._cv('--pc'):this._cv('--ac');
+          cx.beginPath();cx.arc(tx,ty,ATOM_R[this.el]||12,0,2*Math.PI);cx.fill();
+          cx.globalAlpha=.85;cx.font=`bold 11px 'Space Mono',monospace`;cx.textAlign='center';cx.textBaseline='middle';
           cx.fillStyle='#fff';cx.fillText(this.el,tx,ty);
         }
+
+        // snap target highlight
+        if(isSnapTarget){
+          const ta=this.atoms.find(a=>a.id===tgt);
+          const tr=ATOM_R[ta.el]||12;
+          cx.strokeStyle=this._cv('--ok');cx.lineWidth=2;cx.globalAlpha=.6;
+          cx.beginPath();cx.arc(ta.x,ta.y,tr+5,0,2*Math.PI);cx.stroke();
+        }
+
         cx.restore();
       }
     }
