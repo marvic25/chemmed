@@ -244,6 +244,7 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
         <button class="btn" id="redo-btn" onclick="redo()" data-tip="Refazer alteração (Ctrl+Y)" disabled>↪</button>
         <button class="btn" onclick="centerMol()" data-tip="Centralizar a molécula no canvas">⊕</button>
         <button class="btn" onclick="editor.optimize2D()" data-tip="Organizar 2D - otimizar geometria">↔</button>
+        <button class="btn" id="geom-warn-btn" onclick="toggleGeomWarnings()" data-tip="Mostrar/ocultar problemas de geometria">⚠ Ângulos</button>
         <button class="btn" onclick="copySmiles()" data-tip="Copiar o SMILES atual">⧉ SMILES</button>
         <button class="btn" onclick="editor.exportPng()" data-tip="Baixar a estrutura desenhada como PNG">▣ PNG</button>
         <div class="tbs"></div>
@@ -468,6 +469,41 @@ function renderLonePairs(cx,x,y,atomId,editor){
     cx.beginPath();cx.arc(px,py,2.5,0,2*Math.PI);cx.fill();
   }
   cx.globalAlpha=1;
+}
+function validateAngleGeometry(editor){
+  const issues=[];
+  const ANGLE_TOLS={sp3:{target:109.47,tol:20},sp2:{target:120,tol:20},sp:{target:180,tol:25}};
+  for(const atom of editor.atoms){
+    const v=getValence(atom.el);
+    const nb=(editor.adj[atom.id]||[]).map(n=>{
+      const na=editor.atoms.find(a=>a.id===n.nb);
+      const dx=na.x-atom.x,dy=na.y-atom.y;
+      return{nb:n.nb,x:na.x,y:na.y,ang:Math.atan2(dy,dx)*180/Math.PI};
+    });
+    if(nb.length<2)continue;
+    for(let i=0;i<nb.length;i++){
+      for(let j=i+1;j<nb.length;j++){
+        let a1=nb[i].ang,a2=nb[j].ang;
+        let diff=Math.abs(a2-a1);
+        if(diff>180)diff=360-diff;
+        const hy=v.hybrid;
+        const tol=ANGLE_TOLS[hy];
+        if(!tol)continue;
+        const minAng=tol.target-tol.tol,maxAng=tol.target+tol.tol;
+        if(diff<minAng||diff>maxAng){
+          issues.push({
+            atomId:atom.id,
+            element:atom.el,
+            hybrid:hy,
+            angle:diff.toFixed(1),
+            expected:tol.target,
+            msg:`${atom.el} (${hy}) ângulo ${diff.toFixed(1)}° (esperado ~${tol.target}°)`
+          });
+        }
+      }
+    }
+  }
+  return issues;
 }
 const MAX_HIST=20;
 
@@ -744,6 +780,20 @@ class MolEditor{
         cx.fillStyle=this._cv('--ac');cx.globalAlpha=.5;
         cx.fillText(this.el,this.mx,this.my-18);
         cx.restore();
+      }
+    }
+    // geometry warnings
+    if(this.showGeomWarnings){
+      const issues=validateAngleGeometry(this);
+      const problemAtoms=new Set(issues.map(i=>i.atomId));
+      for(const atomId of problemAtoms){
+        const a=this.atoms.find(at=>at.id===atomId);
+        if(a){
+          const r=ATOM_R[a.el]||12;
+          cx.save();cx.strokeStyle=this._cv('--wa');cx.lineWidth=3;cx.globalAlpha=.6;
+          cx.beginPath();cx.arc(a.x,a.y,r+8,0,2*Math.PI);cx.stroke();
+          cx.restore();
+        }
       }
     }
     // atoms
@@ -1040,6 +1090,17 @@ function setBo(n){
     const bond=editor.bonds.find(b=>b.id===editor.selBond);
     if(bond&&bond.order!==n){bond.order=n;editor._saveHist();editor._upd();editor.draw();setEditorStatus(`Ligação alterada para ordem ${n}`);}
   }
+}
+function toggleGeomWarnings(){
+  editor.showGeomWarnings=!editor.showGeomWarnings;
+  document.getElementById('geom-warn-btn').classList.toggle('act',editor.showGeomWarnings);
+  if(editor.showGeomWarnings){
+    const issues=validateAngleGeometry(editor);
+    setEditorStatus(issues.length>0?`⚠ ${issues.length} problema(s) de geometria detectado(s)`:'✓ Geometria OK');
+  }else{
+    setEditorStatus('Validação de ângulos desativada');
+  }
+  editor.draw();
 }
 function setFuncGroup(group){
   if(!group){editor.funcGroupMode=null;setEditorStatus('Modo grupo funcional cancelado');return;}
