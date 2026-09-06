@@ -488,6 +488,22 @@ function setEditorStatus(message){
 const ATOM_COLORS={C:'--bn',N:'--an',O:'--ao',S:'--as',P:'--ap',F:'--ah',Cl:'--ah',Br:'--ah',I:'--ah'};
 const ATOM_R={C:12,N:13,O:13,S:14,P:14,F:11,Cl:14,Br:14,I:14};
 const BOND_LEN=58;
+function getValence(element){
+  const valenceTable={
+    C:{maxBonds:4,lonePairs:0,hybrid:'sp3',naturalCharge:0},
+    N:{maxBonds:3,lonePairs:1,hybrid:'sp3',naturalCharge:0},
+    O:{maxBonds:2,lonePairs:2,hybrid:'sp3',naturalCharge:0},
+    S:{maxBonds:2,lonePairs:2,hybrid:'sp3',naturalCharge:0},
+    P:{maxBonds:3,lonePairs:1,hybrid:'sp3',naturalCharge:0},
+    F:{maxBonds:1,lonePairs:3,hybrid:'sp3',naturalCharge:0},
+    Cl:{maxBonds:1,lonePairs:3,hybrid:'sp3',naturalCharge:0},
+    Br:{maxBonds:1,lonePairs:3,hybrid:'sp3',naturalCharge:0},
+    I:{maxBonds:1,lonePairs:3,hybrid:'sp3',naturalCharge:0},
+    B:{maxBonds:3,lonePairs:0,hybrid:'sp2',naturalCharge:0},
+    H:{maxBonds:1,lonePairs:0,hybrid:'s',naturalCharge:0}
+  };
+  return valenceTable[element]||{maxBonds:2,lonePairs:2,hybrid:'sp3',naturalCharge:0};
+}
 const MAX_HIST=20;
 
 class MolEditor{
