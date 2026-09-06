@@ -1077,14 +1077,22 @@ class MolEditor{
     for(const a of atomsToProcess){
       const h=this._getImplicitH(a.id);
       if(h<=0)continue;
-      const nbs=(this.adj[a.id]||[]).length;
-      const startAng=nbs===0?0:Math.atan2(this.atoms.find(nb=>nb.id===this.adj[a.id][0].nb).y-a.y,this.atoms.find(nb=>nb.id===this.adj[a.id][0].nb).x-a.x)+Math.PI;
-      for(let i=0;i<h;i++){
-        const ang=startAng+i*2*Math.PI/(h+(nbs>0?nbs:1));
-        const hx=a.x+BOND_LEN*Math.cos(ang);
-        const hy=a.y+BOND_LEN*Math.sin(ang);
-        const hId=this._addA(hx,hy,'H');
-        this._addB(a.id,hId,1);
+      const nbs=(this.adj[a.id]||[]);
+      const bondAngs=nbs.map(nb=>Math.atan2(this.atoms.find(x=>x.id===nb.nb).y-a.y,this.atoms.find(x=>x.id===nb.nb).x-a.x));
+      const totalAtoms=h+bondAngs.length;
+      const angStep=2*Math.PI/totalAtoms;
+      let hCount=0;
+      for(let i=0;i<totalAtoms;i++){
+        const ang=i*angStep;
+        const isBond=bondAngs.some(ba=>Math.abs(ba-ang)<0.3);
+        if(!isBond){
+          const hx=a.x+BOND_LEN*Math.cos(ang);
+          const hy=a.y+BOND_LEN*Math.sin(ang);
+          const hId=this._addA(hx,hy,'H');
+          this._addB(a.id,hId,1);
+          hCount++;
+          if(hCount>=h)break;
+        }
       }
     }
   }
