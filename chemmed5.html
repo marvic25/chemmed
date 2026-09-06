@@ -542,7 +542,9 @@ class MolEditor{
   _getImplicitH(atomId){
     const a=this.atoms.find(a=>a.id===atomId);
     if(!a)return 0;
-    const valenceMap={C:4,N:3,O:2,S:2,P:3,F:1,Cl:1,Br:1,I:1,B:3};
+    const reactiveElements={N:true,O:true,S:true,P:true};
+    if(!reactiveElements[a.el])return 0;
+    const valenceMap={N:3,O:2,S:2,P:3,F:1,Cl:1,Br:1,I:1};
     const maxBonds=valenceMap[a.el]||2;
     const bondCount=(this.adj[a.id]||[]).reduce((sum,nb)=>{
       const bond=this.bonds.find(b=>(b.from===a.id&&b.to===nb.nb)||(b.from===nb.nb&&b.to===a.id));
