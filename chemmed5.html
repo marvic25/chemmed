@@ -239,6 +239,7 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
         <button class="btn" id="undo-btn" onclick="undo()" data-tip="Desfazer última alteração (Ctrl+Z)" disabled>↩</button>
         <button class="btn" id="redo-btn" onclick="redo()" data-tip="Refazer alteração (Ctrl+Y)" disabled>↪</button>
         <button class="btn" onclick="centerMol()" data-tip="Centralizar a molécula no canvas">⊕</button>
+        <button class="btn" onclick="editor.fitToView()" data-tip="Ajustar canvas ao tamanho do desenho">◀▶</button>
         <button class="btn" onclick="editor.optimize2D()" data-tip="Organizar 2D - otimizar geometria">↔</button>
         <button class="btn" id="geom-warn-btn" onclick="toggleGeomWarnings()" data-tip="Mostrar/ocultar problemas de geometria">⚠ Ângulos</button>
         <button class="btn" onclick="copySmiles()" data-tip="Copiar o SMILES atual">⧉ SMILES</button>
@@ -823,6 +824,22 @@ class MolEditor{
     const dx=this._w/2-cx,dy=this._h/2-cy;
     this.atoms.forEach(a=>{a.x+=dx;a.y+=dy;});
     this._saveHist();setEditorStatus('Molécula centralizada');this.draw();
+  }
+  fitToView(){
+    if(!this.atoms.length)return;
+    const xs=this.atoms.map(a=>a.x),ys=this.atoms.map(a=>a.y);
+    const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+    const w=maxX-minX,h=maxY-minY;
+    const padding=60;
+    const maxW=this._w-padding,maxH=this._h-padding;
+    const scaleX=w>0?maxW/w:1,scaleY=h>0?maxH/h:1;
+    const scale=Math.min(scaleX,scaleY,1.5);
+    const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+    this.atoms.forEach(a=>{
+      a.x=(a.x-cx)*scale+this._w/2;
+      a.y=(a.y-cy)*scale+this._h/2;
+    });
+    this._saveHist();setEditorStatus('Canvas ajustado ao tamanho do desenho');this.draw();
   }
   _cv(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
   draw(){
