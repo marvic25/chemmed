@@ -252,6 +252,18 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
         <button class="btn" id="b2" onclick="setBo(2)" data-tip="Selecionar ligação dupla">═</button>
         <button class="btn" id="b3" onclick="setBo(3)" data-tip="Selecionar ligação tripla">≡</button>
         <div class="tbs"></div>
+        <select class="asel" id="funcGroupSel" onchange="setFuncGroup(this.value)" data-tip="Adicionar grupo funcional">
+          <option value="">Grupos funcionais</option>
+          <option value="O">-OH (Hidroxila)</option>
+          <option value="N">-NH₂ (Amina)</option>
+          <option value="C(=O)O">-COOH (Ácido)</option>
+          <option value="C(=O)">-C=O (Carbonila)</option>
+          <option value="Cl">-Cl (Cloro)</option>
+          <option value="Br">-Br (Bromo)</option>
+          <option value="F">-F (Flúor)</option>
+          <option value="I">-I (Iodo)</option>
+        </select>
+        <div class="tbs"></div>
         <span class="tbl">Anéis</span>
         <button class="btn ring-btn" onclick="startRing(6,true)" data-tip="Inserir anel benzênico aromático">⬡</button>
         <button class="btn ring-btn" onclick="startRing(6,false)" data-tip="Inserir anel alifático de 6 átomos">○6</button>
@@ -485,6 +497,21 @@ class MolEditor{
     const h=Math.max(0,maxBonds-bondCount-a.ch);
     return h;
   }
+  _addFuncGroup(targetAtomId,groupSmiles){
+    const ta=this.atoms.find(a=>a.id===targetAtomId);
+    if(!ta)return;
+    const groupMol=parseSMILES(groupSmiles);
+    if(!groupMol.atoms.length)return;
+    const gAtomId=this._addA(ta.x+BOND_LEN,ta.y,groupMol.atoms[0].el);
+    this._addB(targetAtomId,gAtomId,1);
+    for(let i=1;i<groupMol.atoms.length;i++){
+      const pa=groupMol.atoms[i-1],ga=groupMol.atoms[i];
+      const gb=groupMol.bonds.find(b=>(b.from===pa.id&&b.to===ga.id)||(b.from===ga.id&&b.to===pa.id));
+      const off=Math.PI/3*i;
+      const newId=this._addA(gAtomId.x+BOND_LEN*Math.cos(off),gAtomId.y+BOND_LEN*Math.sin(off),ga.el);
+      this._addB(gAtomId,newId,gb?.order||1);
+    }
+  }
   _saveHist(){
     const snap={atoms:JSON.parse(JSON.stringify(this.atoms)),bonds:JSON.parse(JSON.stringify(this.bonds)),adj:JSON.parse(JSON.stringify(this.adj)),nA:this.nA,nB:this.nB};
     this._hist=this._hist.slice(0,this._hIdx+1);
@@ -510,6 +537,12 @@ class MolEditor{
   _md(e){
     if(e.button!==0)return;
     const{x,y}=this._pos(e);
+    if(this.funcGroupMode){
+      const ai=this._atomAt(x,y);
+      if(ai>=0){this._addFuncGroup(ai,this.funcGroupMode);this.funcGroupMode=null;document.getElementById('funcGroupSel').value='';document.getElementById('funcGroupSel').classList.remove('act');this._saveHist();this._upd();this.draw();setEditorStatus('Grupo funcional adicionado');}
+      else{setEditorStatus('Selecione um átomo');}
+      return;
+    }
     if(this.ringMode){this._placeRing(x,y);this._saveHist();return;}
     const ai=this._atomAt(x,y);
     if(this.tool==='era'){
@@ -958,6 +991,13 @@ function setBo(n){
     const bond=editor.bonds.find(b=>b.id===editor.selBond);
     if(bond&&bond.order!==n){bond.order=n;editor._saveHist();editor._upd();editor.draw();setEditorStatus(`Ligação alterada para ordem ${n}`);}
   }
+}
+function setFuncGroup(group){
+  if(!group){editor.funcGroupMode=null;setEditorStatus('Modo grupo funcional cancelado');return;}
+  editor.funcGroupMode=group;
+  editor.tool='sel';
+  setEditorStatus(`Selecione um átomo para conectar -${group}`);
+  document.getElementById('funcGroupSel').classList.add('act');
 }
 function startRing(n,aro){
   editor.ringN=n;editor.ringAro=aro;editor.ringMode=!editor.ringMode;editor.tool='draw';
