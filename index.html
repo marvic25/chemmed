@@ -525,19 +525,17 @@ function getValence(element){
   };
   return valenceTable[element]||{maxBonds:2,lonePairs:2,hybrid:'sp3',naturalCharge:0};
 }
-function validateBondCreation(editor,fromAtomId,toAtomId,order){
+function validateBondCreation(editor,fromAtomId,toAtomId,order,excludeBondId=null){
   const fa=editor.atoms.find(a=>a.id===fromAtomId);
   const ta=editor.atoms.find(a=>a.id===toAtomId);
   if(!fa||!ta)return{valid:false,msg:'Átomo inválido'};
   const fv=getValence(fa.el),tv=getValence(ta.el);
-  const fBonds=(editor.adj[fromAtomId]||[]).reduce((sum,nb)=>{
-    const b=editor.bonds.find(b=>(b.from===fromAtomId&&b.to===nb.nb)||(b.from===nb.nb&&b.to===fromAtomId));
+  const sumOther=(atomId)=>(editor.adj[atomId]||[]).reduce((sum,nb)=>{
+    if(nb.bid===excludeBondId)return sum;
+    const b=editor.bonds.find(b=>b.id===nb.bid);
     return sum+(b?.order||1);
   },0);
-  const tBonds=(editor.adj[toAtomId]||[]).reduce((sum,nb)=>{
-    const b=editor.bonds.find(b=>(b.from===toAtomId&&b.to===nb.nb)||(b.from===nb.nb&&b.to===toAtomId));
-    return sum+(b?.order||1);
-  },0);
+  const fBonds=sumOther(fromAtomId),tBonds=sumOther(toAtomId);
   if(fBonds+order>fv.maxBonds)return{valid:false,msg:`${fa.el} excede valência (máx ${fv.maxBonds})`};
   if(tBonds+order>tv.maxBonds)return{valid:false,msg:`${ta.el} excede valência (máx ${tv.maxBonds})`};
   return{valid:true,msg:`Ligação válida`};
@@ -763,16 +761,31 @@ class MolEditor{
       let changed=!!this.drag.newAtom;
       if(tgt>=0&&tgt!==from){
         const ex=this.bonds.find(b=>(b.from===from&&b.to===tgt)||(b.from===tgt&&b.to===from));
-        if(ex){ex.order=ex.order===3?1:ex.order+1;}
-        else{this._addB(from,tgt,this.bo);}
-        changed=true;
+        if(ex){
+          const newOrder=ex.order===3?1:ex.order+1;
+          const check=validateBondCreation(this,from,tgt,newOrder,ex.id);
+          if(check.valid){ex.order=newOrder;changed=true;}
+          else setEditorStatus(check.msg);
+        }else{
+          const check=validateBondCreation(this,from,tgt,this.bo);
+          if(check.valid){this._addB(from,tgt,this.bo);changed=true;}
+          else setEditorStatus(check.msg);
+        }
       }else if(tgt<0){
         const fa=this.atoms.find(a=>a.id===from);
         if(fa&&Math.hypot(x-fa.x,y-fa.y)>22){
-          const ang=this._snapContextual(x,y,from);
-          const ni=this._addA(fa.x+Math.cos(ang)*BOND_LEN,fa.y+Math.sin(ang)*BOND_LEN,this.el);
-          this._addB(from,ni,this.bo);
-          changed=true;
+          const newElMax=getValence(this.el).maxBonds;
+          const fromBonds=(this.adj[from]||[]).reduce((sum,nb)=>sum+(this.bonds.find(b=>b.id===nb.bid)?.order||1),0);
+          if(this.bo>newElMax){
+            setEditorStatus(`${this.el} excede valência (máx ${newElMax})`);
+          }else if(fromBonds+this.bo>getValence(fa.el).maxBonds){
+            setEditorStatus(`${fa.el} excede valência (máx ${getValence(fa.el).maxBonds})`);
+          }else{
+            const ang=this._snapContextual(x,y,from);
+            const ni=this._addA(fa.x+Math.cos(ang)*BOND_LEN,fa.y+Math.sin(ang)*BOND_LEN,this.el);
+            this._addB(from,ni,this.bo);
+            changed=true;
+          }
         }
       }
       if(changed)this._saveHist();
@@ -987,9 +1000,9 @@ class MolEditor{
       let s=a.stereo?`[${symbol}${a.stereo}${h}${charge}]`:symbol;
       for(const nb of(this.adj[id]||[])){
         if(nb.bid===pb)continue;
-        if(sv.has(nb.nb)&&rbs.has(nb.bid)){const num=rbs.get(nb.bid);const b=this.bonds.find(b=>b.id===nb.bid);s+=(b.order===2?'=':b.order===3?'#':'')+(num>9?`%${num}`:String(num));}
+        if(rbs.has(nb.bid)){const num=rbs.get(nb.bid);const b=this.bonds.find(b=>b.id===nb.bid);s+=(b.order===2?'=':b.order===3?'#':'')+(num>9?`%${num}`:String(num));}
       }
-      const ch=(this.adj[id]||[]).filter(nb=>nb.bid!==pb&&!sv.has(nb.nb));
+      const ch=(this.adj[id]||[]).filter(nb=>nb.bid!==pb&&!rbs.has(nb.bid));
       ch.forEach((nb,i)=>{const b=this.bonds.find(b=>b.id===nb.bid);const bc=b.order===2?'=':b.order===3?'#':'';const sub=dfs(nb.nb,nb.bid);s+=i<ch.length-1?`(${bc}${sub})`:bc+sub;});
       return s;
     };
