@@ -208,6 +208,56 @@ html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:14px;ba
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
+/* MOBILE RESPONSIVE */
+@media(max-width:768px){
+  html,body{font-size:12px}
+  .app{grid-template-rows:45px 1fr 20px}
+  .hdr{padding:0 12px;gap:6px}
+  .hl{font-size:.9rem}
+  .hs{font-size:.55rem}
+  .hpills{gap:4px}
+  .hpill{padding:2px 6px;font-size:.55rem}
+  .main{padding:6px;gap:6px}
+  .main.pnl-open{grid-template-columns:1fr}
+  .pnl{border-radius:8px}
+  .tb{padding:4px 5px;gap:2px;overflow-x:auto}
+  .btn{height:24px;padding:0 6px;font-size:.6rem}
+  .btn[data-tip]:hover::after{max-width:120px;font-size:.55rem}
+  .tbl{font-size:.5rem}
+  .elb{width:24px;height:24px;font-size:.65rem}
+  .asel{height:24px;font-size:.6rem}
+  #mol-cv{min-height:200px}
+  #svc{height:200px}
+  .tabs{flex-wrap:wrap;gap:4px}
+  .tab{font-size:.7rem;padding:6px 8px}
+  .tcon{padding:8px}
+  .sec{font-size:.55rem}
+  .pg{grid-template-columns:1fr 1fr}
+  .pcard{padding:8px 10px}
+  .pn{font-size:.55rem}
+  .pv{font-size:1rem}
+  .pmd{font-size:.65rem}
+  .pxmpl{font-size:.6rem;max-height:60px}
+  .main-btn-panel{bottom:20px;left:10px;width:44px;height:44px;font-size:.9rem}
+  .pnl-close-btn{font-size:1rem;top:3px;right:3px}
+}
+@media(max-width:480px){
+  html,body{font-size:11px}
+  .app{grid-template-rows:40px 1fr 18px}
+  .hdr{padding:0 8px;gap:4px}
+  .hl{font-size:.8rem}
+  .hpill{padding:1px 4px;font-size:.5rem}
+  .main{padding:4px;gap:4px}
+  .tb{padding:3px 4px;gap:1px}
+  .btn{height:22px;padding:0 4px;font-size:.55rem}
+  .elb{width:22px;height:22px;font-size:.6rem}
+  #mol-cv{min-height:180px}
+  #svc{height:150px}
+  .tabs{gap:2px}
+  .tab{font-size:.65rem;padding:4px 6px}
+  .tcon{padding:6px}
+  .main-btn-panel{width:40px;height:40px;font-size:.8rem;bottom:16px;left:8px}
+}
 </style>
 
 <div class="app">
@@ -1151,7 +1201,12 @@ class MolEditor{
     }
 
     this.expandImplicitH();
-    this._saveHist();this._upd();this.draw();
+    this._saveHist();this._upd();
+    // Auto-optimize after H expansion
+    this.optimize2D();
+    this.fitToView();
+    this.center();
+    this.draw();
   }
   expandImplicitH(){
     const atomsToProcess=[...this.atoms];
@@ -1312,7 +1367,7 @@ function importSmilesToEditor(){
     const mol=parseSMILES(input);
     if(!mol.atoms.length)throw new Error('nenhum átomo reconhecido');
     editor.loadFromParsed(mol);
-    setEditorStatus(`${mol.atoms.length} átomo${mol.atoms.length===1?'':'s'} importado${mol.atoms.length===1?'':'s'}`);
+    setEditorStatus(`✓ ${mol.atoms.length} átomo${mol.atoms.length===1?'':'s'} · Estrutura otimizada em 2D`);
   }catch(err){
     setEditorStatus('SMILES inválido — revise a estrutura');
   }
@@ -2076,8 +2131,9 @@ async function analyze(){
     ({smiles:sm,mol}=await resolveMoleculeInput(input));
   }catch(e){alert('SMILES ou nome IUPAC não encontrado.');return;}
 
-  // Load into editor for modification
+  // Load into editor for modification (auto-optimizes in loadFromParsed)
   editor.loadFromParsed(mol);
+
   // Update SMILES to editor's version (may be normalized)
   const editorSMILES=editor.toSMILES();
   document.getElementById('si').value=editorSMILES;
