@@ -1085,7 +1085,12 @@ class MolEditor{
     }
 
     this.expandImplicitH();
-    this._saveHist();this._upd();this.draw();
+    this._saveHist();this._upd();
+    // Auto-optimize after H expansion
+    this.optimize2D();
+    this.fitToView();
+    this.center();
+    this.draw();
   }
   expandImplicitH(){
     const atomsToProcess=[...this.atoms];
@@ -1246,13 +1251,7 @@ function importSmilesToEditor(){
     const mol=parseSMILES(input);
     if(!mol.atoms.length)throw new Error('nenhum átomo reconhecido');
     editor.loadFromParsed(mol);
-    // Auto-organize 2D, fit to view, and center
-    setTimeout(()=>{
-      editor.optimize2D();
-      editor.fitToView();
-      editor.center();
-      setEditorStatus(`✓ ${mol.atoms.length} átomo${mol.atoms.length===1?'':'s'} · Estrutura otimizada em 2D`);
-    },50);
+    setEditorStatus(`✓ ${mol.atoms.length} átomo${mol.atoms.length===1?'':'s'} · Estrutura otimizada em 2D`);
   }catch(err){
     setEditorStatus('SMILES inválido — revise a estrutura');
   }
@@ -2016,12 +2015,8 @@ async function analyze(){
     ({smiles:sm,mol}=await resolveMoleculeInput(input));
   }catch(e){alert('SMILES ou nome IUPAC não encontrado.');return;}
 
-  // Load into editor for modification
+  // Load into editor for modification (auto-optimizes in loadFromParsed)
   editor.loadFromParsed(mol);
-  // Auto-organize 2D, fit to view, and center
-  editor.optimize2D();
-  editor.fitToView();
-  editor.center();
 
   // Update SMILES to editor's version (may be normalized)
   const editorSMILES=editor.toSMILES();
