@@ -1246,7 +1246,13 @@ function importSmilesToEditor(){
     const mol=parseSMILES(input);
     if(!mol.atoms.length)throw new Error('nenhum átomo reconhecido');
     editor.loadFromParsed(mol);
-    setEditorStatus(`${mol.atoms.length} átomo${mol.atoms.length===1?'':'s'} importado${mol.atoms.length===1?'':'s'}`);
+    // Auto-organize 2D, fit to view, and center
+    setTimeout(()=>{
+      editor.optimize2D();
+      editor.fitToView();
+      editor.center();
+      setEditorStatus(`✓ ${mol.atoms.length} átomo${mol.atoms.length===1?'':'s'} · Estrutura otimizada em 2D`);
+    },50);
   }catch(err){
     setEditorStatus('SMILES inválido — revise a estrutura');
   }
@@ -2012,6 +2018,11 @@ async function analyze(){
 
   // Load into editor for modification
   editor.loadFromParsed(mol);
+  // Auto-organize 2D, fit to view, and center
+  editor.optimize2D();
+  editor.fitToView();
+  editor.center();
+
   // Update SMILES to editor's version (may be normalized)
   const editorSMILES=editor.toSMILES();
   document.getElementById('si').value=editorSMILES;
