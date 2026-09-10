@@ -1,4 +1,7 @@
 {
+  "name": "chemmed",
+  "version": "1.0.0",
+  "homepage": "https://marvic25.github.io/chemmed/",
   "dependencies": {
     "smiles-drawer": "^2.4.1"
   }

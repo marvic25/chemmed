@@ -1,6 +1,8 @@
 import os
 import webbrowser
 
+APP_VERSION = "v1.0.0"
+
 smiles_drawer_path = os.path.join(
   os.path.dirname(os.path.abspath(__file__)),
   'node_modules', 'smiles-drawer', 'dist', 'smiles-drawer.min.js'
@@ -2040,8 +2042,16 @@ setTimeout(()=>{document.getElementById('si').value='CC(=O)Oc1ccccc1C(=O)O';anal
 </script>
 '''
 
+html = html.replace(
+    '<div class="hs">Editor Molecular · Química Medicinal</div>',
+    f'<div class="hs">Editor Molecular · Química Medicinal · {APP_VERSION}</div>'
+)
+
 output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'chemmed5.html')
+index_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'index.html')
 with open(output_path, 'w', encoding='utf-8') as f:
+    f.write(html)
+with open(index_path, 'w', encoding='utf-8') as f:
     f.write(html)
 print(f"Done: {os.path.getsize(output_path):,} bytes")
 webbrowser.open(output_path)
